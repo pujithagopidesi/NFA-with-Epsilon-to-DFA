@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ε-NFA to DFA Visual Converter | Automata Studio</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- Header Navbar -->
+    <header class="app-header">
+        <div class="brand">
+            <div class="brand-icon">ε</div>
+            <div class="brand-title">
+                AutomataStudio
+                <span class="brand-badge">ε-NFA → DFA</span>
+            </div>
+        </div>
+
+        <div class="header-actions">
+            <!-- Preset Examples -->
+            <div class="preset-select-wrapper">
+                <label for="presetSelect">Load Preset:</label>
+                <select id="presetSelect">
+                    <option value="" disabled selected>-- Select an Example --</option>
+                    <option value="preset1">Example 1: (a|b)*ab with ε-transitions</option>
+                    <option value="preset2">Example 2: Strings ending in "01" (with ε-moves)</option>
+                    <option value="preset3">Example 3: (0|1)*00(0|1)* with ε-loops</option>
+                    <option value="preset4">Example 4: Even 'a's or Even 'b's (ε-branching)</option>
+                </select>
+            </div>
+
+            <!-- Theme Toggle -->
+            <button class="btn btn-secondary btn-sm" id="themeToggleBtn" title="Toggle Light/Dark Theme">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="themeIcon">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+            </button>
+
+            <!-- Export / Report -->
+            <button class="btn btn-secondary btn-sm" id="exportJsonBtn" title="Export Automata JSON">
+                Export JSON
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="app-container">
+        
+        <!-- Left Sidebar: Step-by-Step Inputs -->
+        <aside class="sidebar">
+
+            <!-- Step 1: States & Alphabet -->
+            <section class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <span class="step-num">1</span>
+                        Automata Setup
+                    </h2>
+                </div>
+
+                <!-- Number of States -->
+                <div class="form-group">
+                    <label class="form-label" for="numStatesInput">Number of States (Generates q0 to qn):</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="number" id="numStatesInput" min="1" max="15" value="3" style="width: 80px;">
+                        <button class="btn btn-secondary btn-sm" id="applyStatesBtn" style="flex: 1;">
+                            Update States
+                        </button>
+                    </div>
+                    <span class="form-help" id="statesSummaryText">Automatically generated states: <strong>q0, q1, q2</strong></span>
+                </div>
+
+                <!-- Alphabet -->
+                <div class="form-group">
+                    <label class="form-label" for="alphabetInput">Input Alphabet (Σ):</label>
+                    <input type="text" id="alphabetInput" value="0, 1" placeholder="e.g. 0, 1 or a, b">
+                    <span class="form-help">Comma-separated. Epsilon (ε) is automatically supported.</span>
+                </div>
+
+                <div class="form-row">
+                    <!-- Initial State -->
+                    <div class="form-group">
+                        <label class="form-label" for="initialStateSelect">Initial State:</label>
+                        <select id="initialStateSelect" style="width: 100%;">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+
+                    <!-- Final States Picker -->
+                    <div class="form-group">
+                        <label class="form-label">Final / Accepting State(s):</label>
+                        <div class="state-chip-group" id="finalStatesChips">
+                            <!-- Populated dynamically with toggleable state chips -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Step 2: Transitions Management -->
+            <section class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <span class="step-num">2</span>
+                        Define Transitions (Arrows)
+                    </h2>
+                    <button class="btn btn-secondary btn-sm" id="clearTransitionsBtn" title="Clear all transitions">
+                        Clear All
+                    </button>
+                </div>
+
+                <!-- Quick Add Form -->
+                <div class="quick-trans-form">
+                    <select id="transFromSelect" title="From State"></select>
+                    <select id="transSymbolSelect" title="Input Symbol"></select>
+                    <select id="transToSelect" title="To State"></select>
+                    <button class="btn btn-primary btn-sm" id="addTransitionBtn" title="Add transition arrow">
+                        + Add
+                    </button>
+                </div>
+
+                <!-- Transition Matrix Table -->
+                <label class="form-label">ε-NFA Transition Matrix (Input table with ε):</label>
+                <div class="matrix-container">
+                    <table class="matrix-table" id="transitionMatrixTable">
+                        <!-- Populated dynamically -->
+                    </table>
+                </div>
+                <span class="form-help">Type destination states (e.g. <code>q1, q2</code>) in any cell.</span>
+
+                <!-- Action Button: Convert to DFA -->
+                <div style="margin-top: 18px;">
+                    <button class="btn btn-primary btn-block" id="convertToDfaBtn" style="padding: 12px; font-size: 0.95rem;">
+                        ⚡ Convert to DFA & Remove ε
+                    </button>
+                </div>
+            </section>
+
+        </aside>
+
+        <!-- Right Main Workspace -->
+        <section class="main-workspace">
+
+            <!-- Diagram View Switcher -->
+            <div class="tab-nav">
+                <button class="tab-btn active" id="viewSplitBtn">
+                    <span>Side-by-Side View</span>
+                </button>
+                <button class="tab-btn" id="viewNfaBtn">
+                    <span>1. ε-NFA Diagram</span>
+                </button>
+                <button class="tab-btn" id="viewNoEpsBtn">
+                    <span>2. NFA without ε Diagram</span>
+                </button>
+                <button class="tab-btn" id="viewDfaBtn">
+                    <span>3. Converted DFA Diagram</span>
+                </button>
+            </div>
+
+            <!-- Visualizers Container -->
+            <div class="visualizer-wrapper" id="visualizerWrapper">
+                <!-- 1. ε-NFA Visualizer -->
+                <div class="visualizer-card" id="cardNfa">
+                    <div class="visualizer-header">
+                        <div class="visualizer-title">
+                            <span style="color: var(--primary-light);">●</span>
+                            Input: ε-NFA Diagram
+                        </div>
+                        <span style="font-size: 0.75rem; color: var(--text-muted);">
+                            Drag states to reposition
+                        </span>
+                    </div>
+                    <div class="canvas-container" id="nfaCanvas"></div>
+                </div>
+
+                <!-- 2. NFA without ε Visualizer -->
+                <div class="visualizer-card" id="cardNoEps" style="display: none;">
+                    <div class="visualizer-header">
+                        <div class="visualizer-title">
+                            <span style="color: var(--accent);">●</span>
+                            NFA without ε (Epsilon Removed)
+                        </div>
+                        <span style="font-size: 0.75rem; color: var(--text-muted);">
+                            States: q0 to qn (unchanged)
+                        </span>
+                    </div>
+                    <div class="canvas-container" id="noEpsCanvas"></div>
+                </div>
+
+                <!-- 3. DFA Visualizer -->
+                <div class="visualizer-card" id="cardDfa">
+                    <div class="visualizer-header">
+                        <div class="visualizer-title">
+                            <span style="color: var(--secondary);">●</span>
+                            Output: Converted DFA Diagram
+                        </div>
+                        <div style="display: flex; gap: 6px; align-items: center;">
+                            <label style="font-size: 0.75rem; color: var(--text-secondary); display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                                <input type="checkbox" id="includeTrapStateCheck"> Include Dead State [∅]
+                            </label>
+                        </div>
+                    </div>
+                    <div class="canvas-container" id="dfaCanvas"></div>
+                </div>
+            </div>
+
+            <!-- Interactive String Simulator Card -->
+            <section class="simulator-card">
+                <div class="card-header" style="margin-bottom: 8px;">
+                    <h2 class="card-title">
+                        <span class="step-num">3</span>
+                        String Acceptance Simulator
+                    </h2>
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">
+                        Verifies if an input string is accepted by the converted DFA
+                    </span>
+                </div>
+
+                <div class="simulator-controls">
+                    <input type="text" class="sim-input" id="simInputString" placeholder="Enter test string (e.g. 0101 or abb)...">
+                    <button class="btn btn-primary btn-sm" id="simPlayBtn">▶ Play</button>
+                    <button class="btn btn-secondary btn-sm" id="simStepNextBtn">Step →</button>
+                    <button class="btn btn-secondary btn-sm" id="simResetBtn">Reset</button>
+                </div>
+
+                <!-- Simulation Tape -->
+                <div class="sim-tape" id="simTape">
+                    <span style="color: var(--text-muted); font-size: 0.85rem;">Enter a string and press Play or Step to visualize the execution path.</span>
+                </div>
+
+                <!-- Status / Result -->
+                <div class="sim-status" id="simStatus">
+                    <span>Current State: <strong id="simCurrentState" style="font-family: var(--font-mono); color: var(--secondary);">-</strong></span>
+                    <span id="simResultBadge"></span>
+                </div>
+            </section>
+
+            <!-- Results & Mathematical Proofs Section -->
+            <section class="results-section">
+
+                <!-- 1. Epsilon-Closures Table Accordion -->
+                <div class="accordion-item open" id="closureAccordion">
+                    <div class="accordion-header" onclick="toggleAccordion('closureAccordion')">
+                        <div class="accordion-title">
+                            <span>🔍</span>
+                            <span>1. ε-Closure of Each State</span>
+                        </div>
+                        <span class="accordion-arrow">▼</span>
+                    </div>
+                    <div class="accordion-content">
+                        <div id="epsilonClosureTableContainer">
+                            <p style="color: var(--text-muted); font-size: 0.85rem;">Click "Convert to DFA" to compute ε-closures.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Transition Table After Removing Epsilon (NFA without ε) -->
+                <div class="accordion-item open" id="noEpsTableAccordion">
+                    <div class="accordion-header" onclick="toggleAccordion('noEpsTableAccordion')">
+                        <div class="accordion-title">
+                            <span>⚡</span>
+                            <span>2. Transition Table After Removing Epsilon (NFA without ε)</span>
+                        </div>
+                        <span class="accordion-arrow">▼</span>
+                    </div>
+                    <div class="accordion-content">
+                        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 10px;">
+                            Formula: <code>δ'(q, a) = ε-closure(δ(ε-closure(q), a))</code>. States remain unchanged (<strong>q0, q1, ...</strong>).
+                        </p>
+                        <div id="noEpsTransitionTableContainer">
+                            <p style="color: var(--text-muted); font-size: 0.85rem;">Transition table after removing ε will appear here.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. DFA Transition Table Accordion (Real state names, no A or B) -->
+                <div class="accordion-item open" id="dfaTableAccordion">
+                    <div class="accordion-header" onclick="toggleAccordion('dfaTableAccordion')">
+                        <div class="accordion-title">
+                            <span>📊</span>
+                            <span>3. Transition Table After Converting into DFA (States: [q0], [q0, q1])</span>
+                        </div>
+                        <span class="accordion-arrow">▼</span>
+                    </div>
+                    <div class="accordion-content">
+                        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 10px;">
+                            DFA states preserve the exact subset of states: e.g. <strong>[q0]</strong>, <strong>[q0, q1]</strong>.
+                        </p>
+                        <div id="dfaTransitionTableContainer">
+                            <p style="color: var(--text-muted); font-size: 0.85rem;">DFA transition table will appear here after conversion.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. Step-by-Step Subset Construction Walkthrough Accordion -->
+                <div class="accordion-item open" id="stepByStepAccordion">
+                    <div class="accordion-header" onclick="toggleAccordion('stepByStepAccordion')">
+                        <div class="accordion-title">
+                            <span>📝</span>
+                            <span>4. Step-by-Step Mathematical Computation Log</span>
+                        </div>
+                        <span class="accordion-arrow">▼</span>
+                    </div>
+                    <div class="accordion-content">
+                        <div id="stepByStepContainer">
+                            <p style="color: var(--text-muted); font-size: 0.85rem;">Detailed step-by-step breakdown of every state computation will be shown here.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        ε-NFA to DFA Interactive Studio • Formal Languages & Automata Theory • Instant Visual Graph Generation
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/automata.js"></script>
+    <script src="js/visualizer.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
